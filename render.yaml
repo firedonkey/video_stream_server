@@ -15,10 +15,8 @@ services:
     name: video-stream-frontend
     env: static
     rootDir: frontend
-    buildCommand: |
-      npm install
-      npm run build
-    staticPublishPath: ./dist
+    buildCommand: echo "No build required for static site"
+    staticPublishPath: .
     envVars:
       - key: VITE_WS_URL
-        value: https://video-stream-backend-jr2c.onrender.com 
+        value: wss://video-stream-backend-jr2c.onrender.com/ws/video 
