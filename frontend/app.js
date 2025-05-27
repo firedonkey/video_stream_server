@@ -42,7 +42,7 @@ class VideoStreamViewer {
     initializeWebSocket() {
         this.closeConnection();
 
-        const wsUrl = process.env.VITE_WS_URL || 'ws://localhost:8000/ws/video';
+        const wsUrl = 'wss://video-stream-backend-jr2c.onrender.com/ws/video';
         
         this.ws = new WebSocket(wsUrl);
 
