@@ -11,8 +11,9 @@ services:
       - key: CORS_ORIGINS
         value: https://video-stream-frontend.onrender.com
 
-  - type: static
+  - type: web
     name: video-stream-frontend
+    env: static
     rootDir: frontend
     buildCommand: |
       npm install
