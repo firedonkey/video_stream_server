@@ -14,65 +14,44 @@ class VideoStreamViewer {
         this.frameCount = 0;
         this.fps = 0;
         this.isConnected = false;
-        
-        // Frame buffering
-        this.frameBuffer = [];
-        this.maxBufferSize = 30; // Buffer up to 30 frames
-        this.isPlaying = false;
-        this.targetFps = 30;
-        this.frameInterval = 1000 / this.targetFps;
-        this.lastFrameTimestamp = 0;
+
+        // MediaSource setup
+        this.mediaSource = new MediaSource();
+        this.videoElement.src = URL.createObjectURL(this.mediaSource);
+        this.sourceBuffer = null;
+        this.mediaSource.addEventListener('sourceopen', () => this.handleSourceOpen());
 
         // Initialize immediately
         this.initializeWebSocket();
         this.setupEventListeners();
-        this.startFramePlayback();
 
         // Add page visibility handling
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 console.log('Page hidden, closing WebSocket connection');
                 this.closeConnection();
-                this.isPlaying = false;
             } else {
                 console.log('Page visible, reconnecting WebSocket');
                 this.initializeWebSocket();
-                this.isPlaying = true;
             }
         });
     }
 
-    startFramePlayback() {
-        const playFrames = () => {
-            if (!this.isPlaying) return;
-
-            const now = performance.now();
-            const elapsed = now - this.lastFrameTimestamp;
-
-            if (elapsed >= this.frameInterval && this.frameBuffer.length > 0) {
-                const frame = this.frameBuffer.shift();
-                this.displayFrame(frame);
-                this.lastFrameTimestamp = now;
+    handleSourceOpen() {
+        console.log('MediaSource opened');
+        this.sourceBuffer = this.mediaSource.addSourceBuffer('video/mp4; codecs="avc1.42E01E"');
+        this.sourceBuffer.addEventListener('updateend', () => {
+            if (!this.sourceBuffer.updating && this.mediaSource.readyState === 'open') {
+                // Trim old frames if buffer is too large
+                if (this.sourceBuffer.buffered.length > 0) {
+                    const start = this.sourceBuffer.buffered.start(0);
+                    const end = this.sourceBuffer.buffered.end(0);
+                    if (end - start > 5) { // Keep 5 seconds of video
+                        this.sourceBuffer.remove(start, end - 5);
+                    }
+                }
             }
-
-            requestAnimationFrame(playFrames);
-        };
-
-        this.isPlaying = true;
-        playFrames();
-    }
-
-    displayFrame(frameBlob) {
-        // Create object URL for the frame
-        const url = URL.createObjectURL(frameBlob);
-        
-        // Clean up old URL to prevent memory leaks
-        if (this.videoElement.src) {
-            URL.revokeObjectURL(this.videoElement.src);
-        }
-        
-        // Update the image
-        this.videoElement.src = url;
+        });
     }
 
     closeConnection() {
@@ -100,7 +79,6 @@ class VideoStreamViewer {
             this.statusElement.style.color = '#28a745';
             this.reconnectAttempts = 0;
             this.reconnectDelay = 1000;
-            this.isPlaying = true;
 
             // Send initial connection message
             this.ws.send(JSON.stringify({
@@ -112,7 +90,6 @@ class VideoStreamViewer {
         this.ws.onclose = (event) => {
             console.log('WebSocket connection closed:', event);
             this.isConnected = false;
-            this.isPlaying = false;
             this.statusElement.textContent = 'Disconnected from server';
             this.statusElement.style.color = '#dc3545';
             
@@ -151,7 +128,6 @@ class VideoStreamViewer {
                 try {
                     const metadata = JSON.parse(text);
                     console.log('Received metadata:', metadata);
-                    // Wait for the next message which should be the frame data
                     return;
                 } catch (e) {
                     // Not JSON, treat as raw frame data
@@ -173,11 +149,19 @@ class VideoStreamViewer {
                         console.log('Current FPS:', this.fps);
                     }
 
-                    // Add frame to buffer
-                    if (this.frameBuffer.length >= this.maxBufferSize) {
-                        this.frameBuffer.shift(); // Remove oldest frame if buffer is full
+                    // Display the frame
+                    if (this.sourceBuffer && !this.sourceBuffer.updating) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const arrayBuffer = reader.result;
+                            try {
+                                this.sourceBuffer.appendBuffer(arrayBuffer);
+                            } catch (e) {
+                                console.error('Error appending buffer:', e);
+                            }
+                        };
+                        reader.readAsArrayBuffer(blob);
                     }
-                    this.frameBuffer.push(blob);
                     
                     // If recording, add the frame to the recorded chunks
                     if (this.isRecording) {
@@ -208,11 +192,11 @@ class VideoStreamViewer {
             this.statusElement.textContent = 'Processing recording...';
             
             // Create and download the video file
-            const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+            const blob = new Blob(this.recordedChunks, { type: 'video/mp4' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `recording-${new Date().toISOString()}.webm`;
+            a.download = `recording-${new Date().toISOString()}.mp4`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
