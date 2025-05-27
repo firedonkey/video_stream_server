@@ -42,7 +42,13 @@ class VideoStreamViewer {
     initializeWebSocket() {
         this.closeConnection();
 
-        const wsUrl = 'ws://localhost:8000/ws/video';
+        // Get server type from URL parameter, default to remote
+        const urlParams = new URLSearchParams(window.location.search);
+        const useLocal = urlParams.get('local') === 'true';
+        
+        const localUrl = 'ws://localhost:8000/ws/video';
+        const remoteUrl = 'wss://video-stream-backend-jr2c.onrender.com/ws/video';
+        const wsUrl = useLocal ? localUrl : remoteUrl;
         
         this.ws = new WebSocket(wsUrl);
 
