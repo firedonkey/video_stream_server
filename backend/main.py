@@ -1,12 +1,14 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from app.video_stream import video_manager
-import asyncio
+from fastapi.responses import FileResponse
+from app.video_stream import VideoStream
+import uvicorn
 import logging
-import time
 import sys
+import os
 
-# Configure logging to show timestamps and log level
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -14,57 +16,41 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Video Stream Server API")
+app = FastAPI()
 
-# Configure CORS
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
+
+# Initialize video stream handler
+video_stream = VideoStream()
+
+# Mount the frontend directory for static files
+app.mount("/static", StaticFiles(directory="../frontend"), name="static")
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Video Stream Server API"}
+    return FileResponse("templates/index.html")
+
+@app.websocket("/ws/video")
+async def websocket_endpoint(websocket: WebSocket):
+    try:
+        await video_stream.handle_websocket(websocket)
+    except Exception as e:
+        logger.error(f"Error in WebSocket endpoint: {str(e)}")
+        try:
+            await websocket.close()
+        except:
+            pass
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-@app.websocket("/ws/video")
-async def websocket_video_endpoint(websocket: WebSocket):
-    await video_manager.connect(websocket)
-    logger.info("New client connected to video stream")
-    
-    frame_count = 0
-    start_time = time.time()
-    last_log_time = start_time
-    
-    try:
-        while True:
-            # Receive video frame data
-            frame_data = await websocket.receive_bytes()
-            frame_count += 1
-            
-            # Log every second
-            current_time = time.time()
-            if current_time - last_log_time >= 1.0:
-                elapsed_time = current_time - start_time
-                fps = frame_count / elapsed_time
-                logger.info(f"Stream Stats - FPS: {fps:.2f}, Total frames: {frame_count}, Frame size: {len(frame_data)} bytes")
-                last_log_time = current_time
-            
-            # Process the frame
-            processed_frame = video_manager.process_frame(frame_data)
-            
-            # Broadcast the frame to all connected clients
-            await video_manager.broadcast_frame(frame_data)
-            
-    except WebSocketDisconnect:
-        logger.info("Client disconnected from video stream")
-        video_manager.disconnect(websocket)
-    except Exception as e:
-        logger.error(f"Error in video stream: {str(e)}")
-        video_manager.disconnect(websocket) 
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 
