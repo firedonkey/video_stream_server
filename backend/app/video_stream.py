@@ -19,8 +19,8 @@ class VideoStream:
         self.frame_count = 0
         self.start_time = time.time()
         self.last_log_time = self.start_time
-        self.ping_interval = 20  # seconds
-        self.ping_timeout = 30   # seconds
+        self.ping_interval = 30  # Increase ping interval to reduce overhead
+        self.ping_timeout = 40   # Increase timeout accordingly
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -36,10 +36,10 @@ class VideoStream:
         if not self.active_connections:
             return
 
-        # Log frame statistics
+        # Log frame statistics less frequently
         self.frame_count += 1
         current_time = time.time()
-        if current_time - self.last_log_time >= 1.0:
+        if current_time - self.last_log_time >= 5.0:  # Log every 5 seconds
             elapsed_time = current_time - self.start_time
             fps = self.frame_count / elapsed_time
             logger.info(f"Stream Stats - FPS: {fps:.2f}, Total frames: {self.frame_count}, Frame size: {len(frame_data)} bytes")
