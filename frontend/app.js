@@ -42,8 +42,7 @@ class VideoStreamViewer {
     initializeWebSocket() {
         this.closeConnection();
 
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/video`;
+        const wsUrl = process.env.VITE_WS_URL || 'ws://localhost:8000/ws/video';
         
         this.ws = new WebSocket(wsUrl);
 
