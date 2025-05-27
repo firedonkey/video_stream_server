@@ -9,7 +9,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.9.0
       - key: CORS_ORIGINS
-        value: https://video-stream-frontend.onrender.com
+        value: https://video-stream-frontend-lexb.onrender.com
 
   - type: web
     name: video-stream-frontend
@@ -21,4 +21,4 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_WS_URL
-        value: wss://video-stream-backend.onrender.com/ws/video 
+        value: https://video-stream-backend-jr2c.onrender.com 
