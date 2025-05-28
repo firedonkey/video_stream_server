@@ -7,12 +7,17 @@ import jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from . import database
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Create router
 router = APIRouter()
 
 # Security configuration
-SECRET_KEY = "your-secret-key-here"  # Change this to a secure secret key
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")  # Fallback for development
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

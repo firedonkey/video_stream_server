@@ -44,4 +44,7 @@ Thumbs.db
 *.log
 
 # Generated frontend directory in backend
-backend/frontend/ 
+backend/frontend/
+
+# Database
+backend/video_stream.db 
