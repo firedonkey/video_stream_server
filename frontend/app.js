@@ -14,6 +14,10 @@ class VideoStreamViewer {
         this.loginContainer = document.getElementById('loginContainer');
         this.videoContainer = document.getElementById('videoContainer');
         
+        // Server configuration
+        this.localServerUrl = 'http://localhost:3000';
+        this.remoteServerUrl = 'https://video-stream-backend-jr2c.onrender.com';
+        
         this.recordedChunks = [];
         this.isRecording = false;
         this.ws = null;
@@ -38,6 +42,20 @@ class VideoStreamViewer {
         });
     }
 
+    getServerUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const useLocal = urlParams.get('local') === 'true';
+        return useLocal ? this.localServerUrl : this.remoteServerUrl;
+    }
+
+    getWebSocketUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const useLocal = urlParams.get('local') === 'true';
+        const localUrl = 'ws://localhost:8000/ws/video';
+        const remoteUrl = 'wss://video-stream-backend-jr2c.onrender.com/ws/video';
+        return useLocal ? localUrl : remoteUrl;
+    }
+
     setupEventListeners() {
         this.recordButton.addEventListener('click', () => this.toggleRecording());
         this.logoutButton.addEventListener('click', () => this.handleLogout());
@@ -50,7 +68,8 @@ class VideoStreamViewer {
         const password = document.getElementById('password').value;
 
         try {
-            const response = await fetch('http://localhost:3000/api/login', {
+            const serverUrl = this.getServerUrl();
+            const response = await fetch(`${serverUrl}/api/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -111,16 +130,9 @@ class VideoStreamViewer {
     initializeWebSocket() {
         this.closeConnection();
 
-        // Get server type from URL parameter, default to remote
-        const urlParams = new URLSearchParams(window.location.search);
-        const useLocal = urlParams.get('local') === 'true';
-        
-        const localUrl = 'ws://localhost:8000/ws/video';
-        const remoteUrl = 'wss://video-stream-backend-jr2c.onrender.com/ws/video';
-        const wsUrl = useLocal ? localUrl : remoteUrl;
-        
+        const wsUrl = this.getWebSocketUrl();
         console.log('Connecting to WebSocket server:', wsUrl);
-        this.statusElement.textContent = `Connecting to ${useLocal ? 'local' : 'remote'} server...`;
+        this.statusElement.textContent = `Connecting to ${wsUrl.includes('localhost') ? 'local' : 'remote'} server...`;
         
         // Add auth token to WebSocket URL
         const wsUrlWithAuth = `${wsUrl}?token=${this.authToken}`;
