@@ -437,11 +437,11 @@ class VideoStreamViewer {
 
 // Add password toggle functionality
 function togglePassword() {
-    const passwordInputs = document.querySelectorAll('input[type="password"]');
+    const passwordInputs = document.querySelectorAll('input[type="password"], input[type="text"]');
     passwordInputs.forEach(input => {
         if (input.type === 'password') {
             input.type = 'text';
-        } else {
+        } else if (input.type === 'text' && input.id.includes('password')) {
             input.type = 'password';
         }
     });
