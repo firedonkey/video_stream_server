@@ -94,11 +94,40 @@
             max-width: 400px;
             margin: 0 auto;
             padding: 20px;
+            position: relative;
         }
-        #loginForm {
+        #loginForm, #registerForm {
             display: flex;
             flex-direction: column;
             gap: 15px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: absolute;
+            width: 100%;
+            box-sizing: border-box;
+            left: 0;
+            top: 0;
+            min-height: 300px;
+        }
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .form-header h2 {
+            margin: 0;
+        }
+        .register-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .register-link:hover {
+            text-decoration: underline;
         }
         .form-group {
             display: flex;
@@ -114,7 +143,7 @@
             border-radius: 4px;
             font-size: 16px;
         }
-        #loginButton {
+        #loginButton, #registerButton {
             background-color: #007bff;
             color: white;
             padding: 10px;
@@ -123,10 +152,10 @@
             cursor: pointer;
             font-size: 16px;
         }
-        #loginButton:hover {
+        #loginButton:hover, #registerButton:hover {
             background-color: #0056b3;
         }
-        #loginError {
+        #loginError, #registerError {
             color: #dc3545;
             margin-top: 10px;
             text-align: center;
@@ -152,6 +181,24 @@
         .toggle-password:hover {
             color: #333;
         }
+        .form-footer {
+            margin-top: 15px;
+            text-align: center;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            position: relative;
+            z-index: 3;
+        }
+        .form-footer a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            position: relative;
+            z-index: 3;
+        }
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -164,9 +211,13 @@
         <!-- Login Form -->
         <div id="loginContainer">
             <form id="loginForm">
+                <div class="form-header">
+                    <h2>Login</h2>
+                    <a href="#" id="showRegister" class="register-link">Register here</a>
+                </div>
                 <div class="form-group">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" required>
+                    <label for="username">Email:</label>
+                    <input type="email" id="username" name="username" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password:</label>
@@ -178,6 +229,27 @@
                 <button type="submit" id="loginButton">Login</button>
                 <div id="loginError"></div>
             </form>
+
+            <!-- Registration Form -->
+            <form id="registerForm">
+                <div class="form-header">
+                    <h2>Register</h2>
+                    <a href="#" id="showLogin" class="register-link">Login here</a>
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email:</label>
+                    <input type="email" id="reg-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password:</label>
+                    <div class="password-container">
+                        <input type="password" id="reg-password" name="password" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword()">Show</button>
+                    </div>
+                </div>
+                <button type="submit" id="registerButton">Register</button>
+                <div id="registerError"></div>
+            </form>
         </div>
 
         <!-- Video Stream -->
@@ -188,6 +260,30 @@
         <div id="status">Connecting to server...</div>
     </div>
     <script>
+        // Test if forms exist
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, checking forms...');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const showRegisterLink = document.getElementById('showRegister');
+            const showLoginLink = document.getElementById('showLogin');
+            
+            console.log('Login form exists:', !!loginForm);
+            console.log('Register form exists:', !!registerForm);
+            console.log('Show register link exists:', !!showRegisterLink);
+            console.log('Show login link exists:', !!showLoginLink);
+            
+            if (registerForm) {
+                console.log('Register form display:', registerForm.style.display);
+                console.log('Register form computed style:', window.getComputedStyle(registerForm).display);
+            }
+            
+            // Log the entire login form HTML
+            if (loginForm) {
+                console.log('Login form HTML:', loginForm.outerHTML);
+            }
+        });
+
         // Password toggle functionality
         function togglePassword() {
             const passwordInput = document.getElementById('password');
@@ -202,11 +298,27 @@
             }
         }
 
+        function toggleRegPassword() {
+            const passwordInput = document.getElementById('reg-password');
+            const toggleButton = document.querySelector('#registerForm .toggle-password');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleButton.textContent = 'Hide';
+            } else {
+                passwordInput.type = 'password';
+                toggleButton.textContent = 'Show';
+            }
+        }
+
         // Determine if we're running locally or remotely
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const scriptPath = isLocal ? '/static/app.js' : '/app.js';
+        console.log('Loading app.js from:', scriptPath);
         const script = document.createElement('script');
         script.src = scriptPath;
+        script.onload = () => console.log('app.js loaded successfully');
+        script.onerror = (error) => console.error('Error loading app.js:', error);
         document.body.appendChild(script);
     </script>
 </body>

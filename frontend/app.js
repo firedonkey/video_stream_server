@@ -10,7 +10,9 @@ class VideoStreamViewer {
         this.logoutButton = document.getElementById('logoutButton');
         this.statusElement = document.getElementById('status');
         this.loginForm = document.getElementById('loginForm');
+        this.registerForm = document.getElementById('registerForm');
         this.loginError = document.getElementById('loginError');
+        this.registerError = document.getElementById('registerError');
         this.loginContainer = document.getElementById('loginContainer');
         this.videoContainer = document.getElementById('videoContainer');
         
@@ -30,7 +32,8 @@ class VideoStreamViewer {
         this.isConnected = false;
         this.authToken = null;
 
-        this.setupEventListeners();
+        // Initialize forms and event listeners
+        this.initializeForms();
         this.checkAuth();
 
         document.addEventListener('visibilitychange', () => {
@@ -40,6 +43,54 @@ class VideoStreamViewer {
                 this.checkAuth();
             }
         });
+    }
+
+    initializeForms() {
+        // Set initial display states
+        if (this.loginForm && this.registerForm) {
+            this.loginForm.style.display = 'flex';
+            this.registerForm.style.display = 'none';
+        }
+
+        // Clear any error messages
+        if (this.loginError) this.loginError.textContent = '';
+        if (this.registerError) this.registerError.textContent = '';
+
+        // Setup form event listeners
+        if (this.loginForm) {
+            this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        }
+
+        if (this.registerForm) {
+            this.registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+        }
+
+        // Setup navigation links
+        const showRegisterLink = document.getElementById('showRegister');
+        const showLoginLink = document.getElementById('showLogin');
+
+        if (showRegisterLink) {
+            showRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showRegisterForm();
+            });
+        }
+
+        if (showLoginLink) {
+            showLoginLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showLoginForm();
+            });
+        }
+
+        // Setup record and logout buttons
+        if (this.recordButton) {
+            this.recordButton.addEventListener('click', () => this.toggleRecording());
+        }
+
+        if (this.logoutButton) {
+            this.logoutButton.addEventListener('click', () => this.handleLogout());
+        }
     }
 
     getServerUrl() {
@@ -56,16 +107,19 @@ class VideoStreamViewer {
         return useLocal ? localUrl : remoteUrl;
     }
 
-    setupEventListeners() {
-        this.recordButton.addEventListener('click', () => this.toggleRecording());
-        this.logoutButton.addEventListener('click', () => this.handleLogout());
-        this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
-    }
-
     async handleLogin(e) {
         e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+        if (!this.loginForm) return;
+
+        const username = document.getElementById('username')?.value;
+        const password = document.getElementById('password')?.value;
+
+        if (!username || !password) {
+            if (this.loginError) {
+                this.loginError.textContent = 'Please enter both username and password';
+            }
+            return;
+        }
 
         try {
             const serverUrl = this.getServerUrl();
@@ -87,11 +141,63 @@ class VideoStreamViewer {
                 localStorage.setItem('authToken', this.authToken);
                 this.showVideoStream();
             } else {
-                this.loginError.textContent = data.detail || 'Login failed';
+                if (this.loginError) {
+                    this.loginError.textContent = data.detail || 'Login failed';
+                }
             }
         } catch (error) {
             console.error('Login error:', error);
-            this.loginError.textContent = 'Login failed. Please try again.';
+            if (this.loginError) {
+                this.loginError.textContent = 'Login failed. Please try again.';
+            }
+        }
+    }
+
+    async handleRegister(e) {
+        e.preventDefault();
+        const email = document.getElementById('reg-email')?.value;
+        const password = document.getElementById('reg-password')?.value;
+        const registerError = document.getElementById('registerError');
+
+        if (!email || !password) {
+            if (registerError) {
+                registerError.textContent = 'Please enter both email and password';
+            }
+            return;
+        }
+
+        try {
+            const serverUrl = this.getServerUrl();
+            const response = await fetch(`${serverUrl}/api/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password
+                }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                // Registration successful, switch to login form
+                if (this.registerForm) this.registerForm.style.display = 'none';
+                if (this.loginForm) this.loginForm.style.display = 'flex';
+                if (this.loginError) {
+                    this.loginError.textContent = 'Registration successful! Please login.';
+                    this.loginError.style.color = '#28a745';
+                }
+            } else {
+                if (registerError) {
+                    registerError.textContent = data.detail || 'Registration failed';
+                }
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            if (registerError) {
+                registerError.textContent = 'Registration failed. Please try again.';
+            }
         }
     }
 
@@ -115,12 +221,36 @@ class VideoStreamViewer {
     }
 
     showLoginForm() {
-        this.loginContainer.style.display = 'block';
-        this.videoContainer.style.display = 'none';
-        document.querySelector('.controls').style.display = 'none';
-        this.statusElement.style.display = 'none';
-        this.logoutButton.style.display = 'none';
-        this.closeConnection();
+        if (!this.loginForm || !this.registerForm) return;
+        
+        // Hide registration form and show login form
+        this.registerForm.style.display = 'none';
+        this.loginForm.style.display = 'flex';
+        
+        // Clear error messages
+        if (this.loginError) {
+            this.loginError.textContent = '';
+            this.loginError.style.color = '#dc3545';
+        }
+        if (this.registerError) {
+            this.registerError.textContent = '';
+        }
+    }
+
+    showRegisterForm() {
+        if (!this.loginForm || !this.registerForm) return;
+        
+        // Hide login form and show registration form
+        this.loginForm.style.display = 'none';
+        this.registerForm.style.display = 'flex';
+        
+        // Clear error messages
+        if (this.loginError) {
+            this.loginError.textContent = '';
+        }
+        if (this.registerError) {
+            this.registerError.textContent = '';
+        }
     }
 
     closeConnection() {
@@ -259,15 +389,62 @@ class VideoStreamViewer {
         // Close any existing WebSocket connection
         this.closeConnection();
         
-        // Show login form
-        this.showLoginForm();
+        // Hide video container and controls
+        if (this.videoContainer) {
+            this.videoContainer.style.display = 'none';
+        }
+        const controls = document.querySelector('.controls');
+        if (controls) {
+            controls.style.display = 'none';
+        }
+        
+        // Hide logout button
+        if (this.logoutButton) {
+            this.logoutButton.style.display = 'none';
+        }
+        
+        // Show login container
+        if (this.loginContainer) {
+            this.loginContainer.style.display = 'block';
+        }
+        
+        // Show login form and hide register form
+        if (this.loginForm && this.registerForm) {
+            this.loginForm.style.display = 'flex';
+            this.registerForm.style.display = 'none';
+        }
         
         // Clear any error messages
-        this.loginError.textContent = '';
+        if (this.loginError) {
+            this.loginError.textContent = '';
+        }
+        if (this.registerError) {
+            this.registerError.textContent = '';
+        }
         
         // Clear the video stream
-        this.imgElement.src = '';
+        if (this.imgElement) {
+            this.imgElement.src = '';
+        }
+        
+        // Update status
+        if (this.statusElement) {
+            this.statusElement.textContent = 'Logged out';
+            this.statusElement.style.display = 'none';
+        }
     }
+}
+
+// Add password toggle functionality
+function togglePassword() {
+    const passwordInputs = document.querySelectorAll('input[type="password"]');
+    passwordInputs.forEach(input => {
+        if (input.type === 'password') {
+            input.type = 'text';
+        } else {
+            input.type = 'password';
+        }
+    });
 }
 
 window.addEventListener('load', () => {
