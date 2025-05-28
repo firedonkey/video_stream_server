@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session
 from . import database
 import os
 from dotenv import load_dotenv
+import requests
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +23,7 @@ router = APIRouter()
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")  # Fallback for development
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -142,22 +146,61 @@ async def get_current_user(
         raise credentials_exception
     return user
 
-@router.post("/register")
-async def register(user: UserCreate):
-    # Check if user already exists
-    existing_user = get_user_by_email(user.email)
-    if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="Email already registered"
-        )
+@router.post("/api/google-login")
+async def google_login(credential: dict, db: Session = Depends(database.get_db)):
+    print("Received Google login request")
+    print("Credential:", credential)
     
-    # Create new user
-    user_id = create_user(user.email, user.password)
-    if not user_id:
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to create user"
+    try:
+        print("Verifying Google token...")
+        # Verify the Google token
+        idinfo = id_token.verify_oauth2_token(
+            credential["credential"], 
+            google_requests.Request(), 
+            GOOGLE_CLIENT_ID
         )
-    
-    return {"message": "User registered successfully"} 
+        print("Token verified successfully")
+        print("Token info:", idinfo)
+
+        # Get user email from the token
+        email = idinfo["email"]
+        print(f"User email: {email}")
+        
+        # Check if user exists
+        user = get_user_by_email(db, email)
+        print(f"Existing user found: {user is not None}")
+        
+        # If user doesn't exist, create a new one
+        if not user:
+            print("Creating new user...")
+            user = database.User(
+                email=email,
+                hashed_password="",  # No password for Google users
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            print("New user created")
+        
+        # Create access token
+        print("Creating access token...")
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.email}, 
+            expires_delta=access_token_expires
+        )
+        print("Access token created successfully")
+        
+        return {"token": access_token, "token_type": "bearer"}
+        
+    except Exception as e:
+        print(f"Google login error: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid Google credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) 

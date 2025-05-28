@@ -19,6 +19,7 @@ class VideoStreamViewer {
         // Server configuration
         this.localServerUrl = 'http://localhost:8000';
         this.remoteServerUrl = 'https://video-stream-backend-jr2c.onrender.com';
+        this.googleClientId = '223100584640-n6138tmmnlch4epi0q9ij0chr7s4emk4.apps.googleusercontent.com';
         
         this.recordedChunks = [];
         this.isRecording = false;
@@ -35,6 +36,7 @@ class VideoStreamViewer {
         // Initialize forms and event listeners
         this.initializeForms();
         this.checkAuth();
+        this.initializeGoogleSignIn();
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
@@ -433,18 +435,94 @@ class VideoStreamViewer {
             this.statusElement.style.display = 'none';
         }
     }
+
+    initializeGoogleSignIn() {
+        console.log('Initializing Google Sign-In...');
+        
+        // Make handleGoogleSignIn available globally
+        window.handleGoogleSignIn = async (response) => {
+            console.log('Google Sign-In callback triggered');
+            console.log('Response:', response);
+            
+            try {
+                const serverUrl = this.getServerUrl();
+                console.log('Sending request to:', `${serverUrl}/api/google-login`);
+                
+                const result = await fetch(`${serverUrl}/api/google-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        credential: response.credential
+                    }),
+                });
+
+                console.log('Server response status:', result.status);
+                const data = await result.json();
+                console.log('Server response data:', data);
+                
+                if (result.ok) {
+                    console.log('Login successful, storing token and showing video stream');
+                    this.authToken = data.token;
+                    localStorage.setItem('authToken', this.authToken);
+                    this.showVideoStream();
+                } else {
+                    console.error('Login failed:', data);
+                    if (this.loginError) {
+                        this.loginError.textContent = data.detail || 'Google login failed';
+                    }
+                }
+            } catch (error) {
+                console.error('Google login error:', error);
+                if (this.loginError) {
+                    this.loginError.textContent = 'Google login failed. Please try again.';
+                }
+            }
+        };
+
+        // Initialize Google Sign-In
+        if (window.google && window.google.accounts) {
+            console.log('Google Sign-In API is available');
+            window.google.accounts.id.initialize({
+                client_id: '223100584640-1tf7vmu45pncnnmv624phep9ess1ledh.apps.googleusercontent.com',
+                callback: window.handleGoogleSignIn
+            });
+        } else {
+            console.error('Google Sign-In API is not available');
+        }
+    }
 }
 
-// Add password toggle functionality
+// Password toggle functionality
 function togglePassword() {
-    const passwordInputs = document.querySelectorAll('input[type="password"], input[type="text"]');
-    passwordInputs.forEach(input => {
-        if (input.type === 'password') {
-            input.type = 'text';
-        } else if (input.type === 'text' && input.id.includes('password')) {
-            input.type = 'password';
-        }
-    });
+    const passwordInput = document.getElementById('password');
+    const toggleButton = document.querySelector('#loginForm .toggle-password i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleButton.classList.remove('fa-eye');
+        toggleButton.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleButton.classList.remove('fa-eye-slash');
+        toggleButton.classList.add('fa-eye');
+    }
+}
+
+function toggleRegPassword() {
+    const passwordInput = document.getElementById('reg-password');
+    const toggleButton = document.querySelector('#registerForm .toggle-password i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleButton.classList.remove('fa-eye');
+        toggleButton.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleButton.classList.remove('fa-eye-slash');
+        toggleButton.classList.add('fa-eye');
+    }
 }
 
 window.addEventListener('load', () => {
