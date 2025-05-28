@@ -1,3 +1,10 @@
+// Configuration
+const CONFIG = {
+    localServerUrl: 'http://localhost:8000',
+    remoteServerUrl: 'https://video-stream-backend-jr2c.onrender.com',
+    googleClientId: '223100584640-n6138tmmnlch4epi0q9ij0chr7s4emk4.apps.googleusercontent.com'
+};
+
 class VideoStreamViewer {
     constructor() {
         this.imgElement = document.createElement('img');
@@ -17,9 +24,8 @@ class VideoStreamViewer {
         this.videoContainer = document.getElementById('videoContainer');
         
         // Server configuration
-        this.localServerUrl = 'http://localhost:8000';
-        this.remoteServerUrl = 'https://video-stream-backend-jr2c.onrender.com';
-        this.googleClientId = '223100584640-n6138tmmnlch4epi0q9ij0chr7s4emk4.apps.googleusercontent.com';
+        this.localServerUrl = CONFIG.localServerUrl;
+        this.remoteServerUrl = CONFIG.remoteServerUrl;
         
         this.recordedChunks = [];
         this.isRecording = false;
@@ -485,7 +491,7 @@ class VideoStreamViewer {
         if (window.google && window.google.accounts) {
             console.log('Google Sign-In API is available');
             window.google.accounts.id.initialize({
-                client_id: '223100584640-1tf7vmu45pncnnmv624phep9ess1ledh.apps.googleusercontent.com',
+                client_id: CONFIG.googleClientId,
                 callback: window.handleGoogleSignIn
             });
         } else {
