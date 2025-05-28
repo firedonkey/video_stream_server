@@ -41,4 +41,7 @@ yarn-error.log*
 Thumbs.db
 
 # Logs
-*.log 
+*.log
+
+# Generated frontend directory in backend
+backend/frontend/ 

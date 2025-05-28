@@ -35,16 +35,10 @@ app.include_router(auth_router)
 video_stream = VideoStream()
 
 # Get the absolute path to the frontend directory
-current_dir = os.path.dirname(__file__)
-frontend_dir = os.path.join(current_dir, "frontend")
-
-# If frontend directory doesn't exist in backend, try parent directory
-if not os.path.exists(frontend_dir):
-    frontend_dir = os.path.join(os.path.dirname(current_dir), "frontend")
-
+frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
 logger.info(f"Frontend directory path: {frontend_dir}")
 
-# Mount static files for both local and remote
+# Mount static files
 app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 @app.get("/")
