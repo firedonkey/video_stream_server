@@ -2,6 +2,8 @@
 const CONFIG = {
     localServerUrl: 'http://localhost:8000',
     remoteServerUrl: 'https://video-stream-backend-jr2c.onrender.com',
+    localWsUrl: 'ws://localhost:8000/ws/video',
+    remoteWsUrl: 'wss://video-stream-backend-jr2c.onrender.com/ws/video',
     googleClientId: '223100584640-n6138tmmnlch4epi0q9ij0chr7s4emk4.apps.googleusercontent.com'
 };
 
@@ -26,6 +28,8 @@ class VideoStreamViewer {
         // Server configuration
         this.localServerUrl = CONFIG.localServerUrl;
         this.remoteServerUrl = CONFIG.remoteServerUrl;
+        this.localWsUrl = CONFIG.localWsUrl;
+        this.remoteWsUrl = CONFIG.remoteWsUrl;
         
         this.recordedChunks = [];
         this.isRecording = false;
@@ -102,17 +106,13 @@ class VideoStreamViewer {
     }
 
     getServerUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const useLocal = urlParams.get('local') === 'true';
-        return useLocal ? this.localServerUrl : this.remoteServerUrl;
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        return isLocal ? this.localServerUrl : this.remoteServerUrl;
     }
 
     getWebSocketUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const useLocal = urlParams.get('local') === 'true';
-        const localUrl = 'ws://localhost:8000/ws/video';
-        const remoteUrl = 'wss://video-stream-backend-jr2c.onrender.com/ws/video';
-        return useLocal ? localUrl : remoteUrl;
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        return isLocal ? this.localWsUrl : this.remoteWsUrl;
     }
 
     async handleLogin(e) {

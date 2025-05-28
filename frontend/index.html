@@ -13,7 +13,9 @@
             console.log('Response:', response);
             
             try {
-                const serverUrl = window.location.origin;
+                // Determine if we're running locally or remotely
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const serverUrl = isLocal ? 'http://localhost:8000' : 'https://video-stream-backend-jr2c.onrender.com';
                 console.log('Sending request to:', `${serverUrl}/api/google-login`);
                 
                 const result = await fetch(`${serverUrl}/api/google-login`, {
