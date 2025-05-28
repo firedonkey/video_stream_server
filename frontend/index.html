@@ -18,6 +18,29 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        #logoutButton {
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: none;
+        }
+        #logoutButton:hover {
+            background-color: #5a6268;
         }
         #videoContainer {
             width: 640px;
@@ -25,6 +48,7 @@
             background-color: #000;
             border-radius: 4px;
             overflow: hidden;
+            display: none;
         }
         #videoStream {
             width: 100%;
@@ -32,7 +56,7 @@
             display: block;
         }
         .controls {
-            display: flex;
+            display: none;
             gap: 10px;
             margin-bottom: 20px;
             justify-content: center;
@@ -64,12 +88,99 @@
             background-color: #f8f9fa;
             margin-top: 10px;
             text-align: center;
+            display: none;
+        }
+        #loginContainer {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #loginForm {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .form-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        #loginButton {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #loginButton:hover {
+            background-color: #0056b3;
+        }
+        #loginError {
+            color: #dc3545;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-container input {
+            flex: 1;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .toggle-password:hover {
+            color: #333;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Video Stream Viewer</h1>
+        <div class="header">
+            <h1>Video Stream Viewer</h1>
+            <button id="logoutButton">Logout</button>
+        </div>
+        
+        <!-- Login Form -->
+        <div id="loginContainer">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword()">Show</button>
+                    </div>
+                </div>
+                <button type="submit" id="loginButton">Login</button>
+                <div id="loginError"></div>
+            </form>
+        </div>
+
+        <!-- Video Stream -->
         <div id="videoContainer"></div>
         <div class="controls">
             <button id="recordButton">Record</button>
@@ -77,6 +188,20 @@
         <div id="status">Connecting to server...</div>
     </div>
     <script>
+        // Password toggle functionality
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleButton = document.querySelector('.toggle-password');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleButton.textContent = 'Hide';
+            } else {
+                passwordInput.type = 'password';
+                toggleButton.textContent = 'Show';
+            }
+        }
+
         // Determine if we're running locally or remotely
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const scriptPath = isLocal ? '/static/app.js' : '/app.js';

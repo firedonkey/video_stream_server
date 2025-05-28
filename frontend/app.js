@@ -7,7 +7,13 @@ class VideoStreamViewer {
         document.getElementById('videoContainer').appendChild(this.imgElement);
 
         this.recordButton = document.getElementById('recordButton');
+        this.logoutButton = document.getElementById('logoutButton');
         this.statusElement = document.getElementById('status');
+        this.loginForm = document.getElementById('loginForm');
+        this.loginError = document.getElementById('loginError');
+        this.loginContainer = document.getElementById('loginContainer');
+        this.videoContainer = document.getElementById('videoContainer');
+        
         this.recordedChunks = [];
         this.isRecording = false;
         this.ws = null;
@@ -18,17 +24,80 @@ class VideoStreamViewer {
         this.frameCount = 0;
         this.fps = 0;
         this.isConnected = false;
+        this.authToken = null;
 
-        this.initializeWebSocket();
         this.setupEventListeners();
+        this.checkAuth();
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 this.closeConnection();
             } else {
-                this.initializeWebSocket();
+                this.checkAuth();
             }
         });
+    }
+
+    setupEventListeners() {
+        this.recordButton.addEventListener('click', () => this.toggleRecording());
+        this.logoutButton.addEventListener('click', () => this.handleLogout());
+        this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+    }
+
+    async handleLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch('http://localhost:3000/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                this.authToken = data.token;
+                localStorage.setItem('authToken', this.authToken);
+                this.showVideoStream();
+            } else {
+                this.loginError.textContent = data.message || 'Login failed';
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            this.loginError.textContent = 'Login failed. Please try again.';
+        }
+    }
+
+    checkAuth() {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            this.authToken = token;
+            this.showVideoStream();
+        } else {
+            this.showLoginForm();
+        }
+    }
+
+    showVideoStream() {
+        this.loginContainer.style.display = 'none';
+        this.videoContainer.style.display = 'block';
+        document.querySelector('.controls').style.display = 'flex';
+        this.statusElement.style.display = 'block';
+        this.logoutButton.style.display = 'block';
+        this.initializeWebSocket();
+    }
+
+    showLoginForm() {
+        this.loginContainer.style.display = 'block';
+        this.videoContainer.style.display = 'none';
+        document.querySelector('.controls').style.display = 'none';
+        this.statusElement.style.display = 'none';
+        this.logoutButton.style.display = 'none';
+        this.closeConnection();
     }
 
     closeConnection() {
@@ -53,7 +122,9 @@ class VideoStreamViewer {
         console.log('Connecting to WebSocket server:', wsUrl);
         this.statusElement.textContent = `Connecting to ${useLocal ? 'local' : 'remote'} server...`;
         
-        this.ws = new WebSocket(wsUrl);
+        // Add auth token to WebSocket URL
+        const wsUrlWithAuth = `${wsUrl}?token=${this.authToken}`;
+        this.ws = new WebSocket(wsUrlWithAuth);
 
         this.ws.onopen = () => {
             console.log('WebSocket connection established');
@@ -69,6 +140,12 @@ class VideoStreamViewer {
             this.isConnected = false;
             this.statusElement.textContent = 'Disconnected from server';
             this.statusElement.style.color = '#dc3545';
+            
+            if (event.code === 1008) { // Policy violation (invalid token)
+                localStorage.removeItem('authToken');
+                this.showLoginForm();
+                return;
+            }
             
             if (this.reconnectAttempts < this.maxReconnectAttempts) {
                 this.reconnectAttempts++;
@@ -118,6 +195,10 @@ class VideoStreamViewer {
                 const text = await event.data.text();
                 try {
                     const metadata = JSON.parse(text);
+                    if (metadata.error === 'unauthorized') {
+                        localStorage.removeItem('authToken');
+                        this.showLoginForm();
+                    }
                 } catch (e) {
                     console.log('Received text message:', text);
                 }
@@ -125,10 +206,6 @@ class VideoStreamViewer {
                 console.error('Error processing message:', e);
             }
         };
-    }
-
-    setupEventListeners() {
-        this.recordButton.addEventListener('click', () => this.toggleRecording());
     }
 
     toggleRecording() {
@@ -156,6 +233,24 @@ class VideoStreamViewer {
             
             this.statusElement.textContent = 'Recording saved';
         }
+    }
+
+    handleLogout() {
+        // Clear the auth token
+        localStorage.removeItem('authToken');
+        this.authToken = null;
+        
+        // Close any existing WebSocket connection
+        this.closeConnection();
+        
+        // Show login form
+        this.showLoginForm();
+        
+        // Clear any error messages
+        this.loginError.textContent = '';
+        
+        // Clear the video stream
+        this.imgElement.src = '';
     }
 }
 
