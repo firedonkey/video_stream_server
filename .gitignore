@@ -47,4 +47,8 @@ Thumbs.db
 backend/frontend/
 
 # Database
-backend/video_stream.db 
+backend/video_stream.db
+
+# Environment variables
+.env
+backend/.env 
