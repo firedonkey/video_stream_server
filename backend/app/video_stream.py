@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class VideoStream:
     def __init__(self):
-        self.active_connections = set()
+        self.active_connections = []
         self.frame_count = 0
         self.start_time = time.time()
         self.last_log_time = self.start_time
@@ -25,7 +25,7 @@ class VideoStream:
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections.add(websocket)
+        self.active_connections.append(websocket)
         logger.info(f"New client connected. Total connections: {len(self.active_connections)}")
 
     def disconnect(self, websocket: WebSocket):
@@ -47,16 +47,16 @@ class VideoStream:
             self.last_log_time = current_time
 
         # Broadcast to all connected clients
-        disconnected_clients = set()
+        disconnected_clients = []
         for connection in self.active_connections:
             try:
                 if connection.client_state == WebSocketState.CONNECTED:
                     await connection.send_bytes(frame_data)
                 else:
-                    disconnected_clients.add(connection)
+                    disconnected_clients.append(connection)
             except Exception as e:
                 logger.error(f"Error sending frame to client: {str(e)}")
-                disconnected_clients.add(connection)
+                disconnected_clients.append(connection)
 
         # Remove disconnected clients
         for client in disconnected_clients:

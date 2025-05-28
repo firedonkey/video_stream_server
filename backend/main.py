@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from app.video_stream import VideoStream, video_manager
+from app.auth import router as auth_router
 import uvicorn
 import logging
 import sys
@@ -27,11 +28,15 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+# Include authentication router
+app.include_router(auth_router)
+
 # Initialize video stream handler
 video_stream = VideoStream()
 
 # Get the absolute path to the frontend directory
-frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend")
+logger.info(f"Frontend directory path: {frontend_dir}")
 
 # Mount static files for both local and remote
 app.mount("/static", StaticFiles(directory=frontend_dir), name="static")

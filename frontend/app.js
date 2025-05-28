@@ -15,7 +15,7 @@ class VideoStreamViewer {
         this.videoContainer = document.getElementById('videoContainer');
         
         // Server configuration
-        this.localServerUrl = 'http://localhost:3000';
+        this.localServerUrl = 'http://localhost:8000';
         this.remoteServerUrl = 'https://video-stream-backend-jr2c.onrender.com';
         
         this.recordedChunks = [];
@@ -69,12 +69,16 @@ class VideoStreamViewer {
 
         try {
             const serverUrl = this.getServerUrl();
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
             const response = await fetch(`${serverUrl}/api/login`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: JSON.stringify({ username, password }),
+                body: formData.toString(),
             });
 
             const data = await response.json();
@@ -83,7 +87,7 @@ class VideoStreamViewer {
                 localStorage.setItem('authToken', this.authToken);
                 this.showVideoStream();
             } else {
-                this.loginError.textContent = data.message || 'Login failed';
+                this.loginError.textContent = data.detail || 'Login failed';
             }
         } catch (error) {
             console.error('Login error:', error);
