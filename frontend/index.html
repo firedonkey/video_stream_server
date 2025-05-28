@@ -4,6 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Stream Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        // Make handleGoogleSignIn available globally
+        window.handleGoogleSignIn = async (response) => {
+            console.log('Google Sign-In callback triggered');
+            console.log('Response:', response);
+            
+            try {
+                const serverUrl = window.location.origin;
+                console.log('Sending request to:', `${serverUrl}/api/google-login`);
+                
+                const result = await fetch(`${serverUrl}/api/google-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        credential: response.credential
+                    }),
+                });
+
+                console.log('Server response status:', result.status);
+                const data = await result.json();
+                console.log('Server response data:', data);
+                
+                if (result.ok) {
+                    console.log('Login successful, storing token and showing video stream');
+                    localStorage.setItem('authToken', data.token);
+                    window.location.reload(); // Reload to show video stream
+                } else {
+                    console.error('Login failed:', data);
+                    const loginError = document.getElementById('loginError');
+                    if (loginError) {
+                        loginError.textContent = data.detail || 'Google login failed';
+                    }
+                }
+            } catch (error) {
+                console.error('Google login error:', error);
+                const loginError = document.getElementById('loginError');
+                if (loginError) {
+                    loginError.textContent = 'Google login failed. Please try again.';
+                }
+            }
+        };
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -199,6 +245,175 @@
         .form-footer a:hover {
             text-decoration: underline;
         }
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+            color: #757575;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px 20px;
+            margin: 10px 0;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .google-btn:hover {
+            background-color: #f5f5f5;
+        }
+        .google-btn img {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+        .divider span {
+            padding: 0 10px;
+        }
+        .form-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-header h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        .password-container {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            font-size: 14px;
+        }
+        .toggle-password:hover {
+            color: #333;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 25px 0;
+            color: #666;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+        .divider span {
+            padding: 0 15px;
+            font-size: 14px;
+        }
+        .google-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 16px;
+            color: #333;
+        }
+        .google-btn:hover {
+            background-color: #f8f9fa;
+        }
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        .form-footer a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -210,46 +425,85 @@
         
         <!-- Login Form -->
         <div id="loginContainer">
-            <form id="loginForm">
+            <div id="loginForm" class="form-container">
                 <div class="form-header">
-                    <h2>Login</h2>
-                    <a href="#" id="showRegister" class="register-link">Register here</a>
+                    <h2>Sign In</h2>
                 </div>
-                <div class="form-group">
-                    <label for="username">Email:</label>
-                    <input type="email" id="username" name="username" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <div class="password-container">
-                        <input type="password" id="password" name="password" required>
-                        <button type="button" class="toggle-password" onclick="togglePassword()">Show</button>
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <label for="username">Email</label>
+                        <input type="email" id="username" name="username" required placeholder="Enter your email">
                     </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="password-container">
+                            <input type="password" id="password" name="password" required placeholder="Enter your password">
+                            <button type="button" class="toggle-password" onclick="togglePassword()">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">Sign In</button>
+                    <div id="loginError" class="error"></div>
+                </form>
+                
+                <div class="divider">
+                    <span>or continue with</span>
                 </div>
-                <button type="submit" id="loginButton">Login</button>
-                <div id="loginError"></div>
-            </form>
+                
+                <!-- Google Sign-In Button Container -->
+                <div id="g_id_onload"
+                    data-client_id="223100584640-n6138tmmnlch4epi0q9ij0chr7s4emk4.apps.googleusercontent.com"
+                    data-context="signin"
+                    data-ux_mode="popup"
+                    data-callback="handleGoogleSignIn"
+                    data-auto_prompt="false">
+                </div>
+
+                <!-- Google Sign-In Button -->
+                <div class="g_id_signin"
+                    data-type="standard"
+                    data-shape="rectangular"
+                    data-theme="outline"
+                    data-text="signin_with"
+                    data-size="large"
+                    data-logo_alignment="left"
+                    data-width="400">
+                </div>
+                
+                <div class="form-footer">
+                    <p>Don't have an account? <a href="#" id="showRegister">Sign up</a></p>
+                </div>
+            </div>
 
             <!-- Registration Form -->
-            <form id="registerForm">
+            <div id="registerForm" class="form-container" style="display: none;">
                 <div class="form-header">
-                    <h2>Register</h2>
-                    <a href="#" id="showLogin" class="register-link">Login here</a>
+                    <h2>Create Account</h2>
+                    <p>Please fill in your details</p>
                 </div>
-                <div class="form-group">
-                    <label for="reg-email">Email:</label>
-                    <input type="email" id="reg-email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="reg-password">Password:</label>
-                    <div class="password-container">
-                        <input type="password" id="reg-password" name="password" required>
-                        <button type="button" class="toggle-password" onclick="togglePassword()">Show</button>
+                <form id="registerFormElement">
+                    <div class="form-group">
+                        <label for="reg-email">Email</label>
+                        <input type="email" id="reg-email" name="email" required placeholder="Enter your email">
                     </div>
+                    <div class="form-group">
+                        <label for="reg-password">Password</label>
+                        <div class="password-container">
+                            <input type="password" id="reg-password" name="password" required placeholder="Create a password">
+                            <button type="button" class="toggle-password" onclick="toggleRegPassword()">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">Create Account</button>
+                    <div id="registerError" class="error"></div>
+                </form>
+                
+                <div class="form-footer">
+                    <p>Already have an account? <a href="#" id="showLogin">Sign in</a></p>
                 </div>
-                <button type="submit" id="registerButton">Register</button>
-                <div id="registerError"></div>
-            </form>
+            </div>
         </div>
 
         <!-- Video Stream -->
