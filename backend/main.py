@@ -2,7 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from app.video_stream import VideoStream
+from app.video_stream import VideoStream, video_manager
 import uvicorn
 import logging
 import sys
@@ -30,17 +30,24 @@ app.add_middleware(
 # Initialize video stream handler
 video_stream = VideoStream()
 
-# Mount the frontend directory for static files
-app.mount("/static", StaticFiles(directory="../frontend"), name="static")
+# Get the absolute path to the frontend directory
+frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+
+# Mount static files
+app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 @app.get("/")
-async def root():
-    return FileResponse("templates/index.html")
+async def get_index():
+    return FileResponse(os.path.join(frontend_dir, "index.html"))
+
+@app.get("/index.html")
+async def get_index_html():
+    return FileResponse(os.path.join(frontend_dir, "index.html"))
 
 @app.websocket("/ws/video")
 async def websocket_endpoint(websocket: WebSocket):
     try:
-        await video_stream.handle_websocket(websocket)
+        await video_manager.handle_websocket(websocket)
     except Exception as e:
         logger.error(f"Error in WebSocket endpoint: {str(e)}")
         try:

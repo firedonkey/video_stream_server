@@ -50,9 +50,13 @@ class VideoStreamViewer {
         const remoteUrl = 'wss://video-stream-backend-jr2c.onrender.com/ws/video';
         const wsUrl = useLocal ? localUrl : remoteUrl;
         
+        console.log('Connecting to WebSocket server:', wsUrl);
+        this.statusElement.textContent = `Connecting to ${useLocal ? 'local' : 'remote'} server...`;
+        
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
+            console.log('WebSocket connection established');
             this.isConnected = true;
             this.statusElement.textContent = 'Connected to server';
             this.statusElement.style.color = '#28a745';
@@ -61,6 +65,7 @@ class VideoStreamViewer {
         };
 
         this.ws.onclose = (event) => {
+            console.log('WebSocket connection closed:', event.code, event.reason);
             this.isConnected = false;
             this.statusElement.textContent = 'Disconnected from server';
             this.statusElement.style.color = '#dc3545';
@@ -68,6 +73,7 @@ class VideoStreamViewer {
             if (this.reconnectAttempts < this.maxReconnectAttempts) {
                 this.reconnectAttempts++;
                 this.reconnectDelay = Math.min(30000, this.reconnectDelay * 2);
+                console.log(`Attempting to reconnect in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
                 setTimeout(() => this.initializeWebSocket(), this.reconnectDelay);
             } else {
                 this.statusElement.textContent = 'Failed to connect to server. Please refresh the page.';
@@ -75,6 +81,7 @@ class VideoStreamViewer {
         };
 
         this.ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
             this.statusElement.textContent = 'Connection error';
             this.statusElement.style.color = '#dc3545';
         };
