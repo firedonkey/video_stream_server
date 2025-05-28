@@ -76,6 +76,13 @@
         </div>
         <div id="status">Connecting to server...</div>
     </div>
-    <script src="app.js"></script>
+    <script>
+        // Determine if we're running locally or remotely
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const scriptPath = isLocal ? '/static/app.js' : '/app.js';
+        const script = document.createElement('script');
+        script.src = scriptPath;
+        document.body.appendChild(script);
+    </script>
 </body>
 </html> 

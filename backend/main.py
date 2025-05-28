@@ -33,7 +33,7 @@ video_stream = VideoStream()
 # Get the absolute path to the frontend directory
 frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 
-# Mount static files
+# Mount static files for both local and remote
 app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 @app.get("/")
@@ -44,12 +44,21 @@ async def get_index():
 async def get_index_html():
     return FileResponse(os.path.join(frontend_dir, "index.html"))
 
+@app.get("/app.js")
+async def get_app_js():
+    return FileResponse(os.path.join(frontend_dir, "app.js"))
+
 @app.websocket("/ws/video")
 async def websocket_endpoint(websocket: WebSocket):
+    client_info = f"{websocket.client.host}:{websocket.client.port}"
+    logger.info(f"New WebSocket connection request from {client_info}")
     try:
         await video_manager.handle_websocket(websocket)
+        logger.info(f"WebSocket connection closed normally for {client_info}")
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected for {client_info}")
     except Exception as e:
-        logger.error(f"Error in WebSocket endpoint: {str(e)}")
+        logger.error(f"Error in WebSocket endpoint for {client_info}: {str(e)}")
         try:
             await websocket.close()
         except:
