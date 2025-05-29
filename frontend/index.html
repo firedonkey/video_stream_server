@@ -215,22 +215,37 @@
             position: relative;
             display: flex;
             align-items: center;
+            width: 100%;
         }
         .password-container input {
             flex: 1;
+            padding-right: 40px;  /* Make space for the toggle button */
+            width: 100%;
+            box-sizing: border-box;
         }
         .toggle-password {
             position: absolute;
-            right: 10px;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
             background: none;
             border: none;
             cursor: pointer;
-            padding: 0;
+            padding: 4px;
             color: #666;
             font-size: 14px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
         }
         .toggle-password:hover {
             color: #333;
+        }
+        .toggle-password i {
+            font-size: 16px;
         }
         .form-footer {
             margin-top: 15px;
@@ -304,8 +319,23 @@
             #loginForm, #registerForm {
                 padding: 15px;
             }
+            .form-group {
+                width: 100%;
+            }
             .form-group input {
                 font-size: 16px;  /* Prevent zoom on mobile */
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .password-container {
+                width: 100%;
+            }
+            .password-container input {
+                padding-right: 40px;  /* Ensure space for toggle button on mobile */
+            }
+            .toggle-password {
+                right: 4px;  /* Adjust position on mobile */
+                padding: 8px;  /* Larger touch target on mobile */
             }
             button {
                 width: 100%;
