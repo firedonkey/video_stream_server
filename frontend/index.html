@@ -91,16 +91,19 @@
             background-color: #5a6268;
         }
         #videoContainer {
-            width: 640px;
+            width: 100%;
+            max-width: 640px;
             margin: 0 auto 20px;
             background-color: #000;
             border-radius: 4px;
             overflow: hidden;
             display: none;
+            aspect-ratio: 4/3;  /* Maintain aspect ratio */
         }
         #videoStream {
             width: 100%;
-            height: auto;
+            height: 100%;
+            object-fit: contain;  /* Maintain aspect ratio while fitting container */
             display: block;
         }
         .controls {
@@ -237,42 +240,24 @@
             position: relative;
             z-index: 3;
         }
-        .form-footer a {
-            color: #007bff;
-            text-decoration: none;
-            font-weight: bold;
-            position: relative;
-            z-index: 3;
-        }
-        .form-footer a:hover {
-            text-decoration: underline;
-        }
-        .google-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+        .form-footer .divider {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            font-size: 16px;
-            color: #333;
-        }
-        .google-btn:hover {
-            background-color: #f8f9fa;
-        }
-        .google-btn img {
-            width: 20px;
-            height: 20px;
-        }
-        .form-footer {
             text-align: center;
-            margin-top: 20px;
+            margin: 15px 0;
             color: #666;
+        }
+        .form-footer .divider::before,
+        .form-footer .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+        .form-footer .divider::before {
+            margin-right: 10px;
+        }
+        .form-footer .divider::after {
+            margin-left: 10px;
         }
         .form-footer a {
             color: #007bff;
@@ -298,6 +283,37 @@
             display: flex;
             justify-content: center;
             margin: 0 auto;
+        }
+        .google-btn {
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            display: block;
+        }
+        .google-btn iframe {
+            width: 100% !important;
+            height: 40px !important;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            #loginContainer {
+                padding: 10px;
+            }
+            #loginForm, #registerForm {
+                padding: 15px;
+            }
+            .form-group input {
+                font-size: 16px;  /* Prevent zoom on mobile */
+            }
+            button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            .google-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -332,28 +348,23 @@
                     <div id="loginError" class="error"></div>
                 </form>
                 
-                <div class="divider">
-                    <span>or continue with</span>
-                </div>
-                
-                <!-- Google Sign-In Button Container -->
-                <div id="g_id_onload" style="display: flex; justify-content: center; margin: 0 auto;"
-                    data-client_id="223100584640-n6138tmmnlch4epi0q9ij0chr7s4emk4.apps.googleusercontent.com"
-                    data-context="signin"
-                    data-ux_mode="popup"
-                    data-callback="handleGoogleSignIn"
-                    data-auto_prompt="false">
-                </div>
-
-                <!-- Google Sign-In Button -->
-                <div class="g_id_signin" style="display: flex; justify-content: center; margin: 0 auto;"
-                    data-type="standard"
-                    data-shape="rectangular"
-                    data-theme="outline"
-                    data-text="signin_with"
-                    data-size="large"
-                    data-logo_alignment="left"
-                    data-width="400">
+                <div class="form-footer">
+            
+                    <div class="google-btn">
+                        <div id="g_id_onload"
+                             data-client_id="223100584640-n6138tmmnlch4epi0q9ij0chr7s4emk4.apps.googleusercontent.com"
+                             data-callback="handleGoogleSignIn">
+                        </div>
+                        <div class="g_id_signin"
+                             data-type="standard"
+                             data-size="large"
+                             data-theme="outline"
+                             data-text="sign_in_with"
+                             data-shape="rectangular"
+                             data-logo_alignment="left"
+                             data-width="300">
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-footer">
